@@ -27,7 +27,6 @@ class _PrayerPageState extends State<PrayerPage> {
   var prayerRefLisener;
   var userRefLisener;
 
-
   //User thisCurrentUser;
   ChurchUserModel thisUser;
 
@@ -89,7 +88,8 @@ class _PrayerPageState extends State<PrayerPage> {
 
   _onPrayerEntryAdded(Event event) {
     setState(() {
-      prayers.add(Prayer.fromSnapshot(event.snapshot));
+      prayers.insert(0, Prayer.fromSnapshot(event.snapshot));
+      //prayers.add(Prayer.fromSnapshot(event.snapshot));
       print("${event.snapshot.value["prayerPostMessage"]}");
     });
   }
@@ -117,7 +117,6 @@ class _PrayerPageState extends State<PrayerPage> {
   }
   //------------------
 
-
   @override
   void dispose() {
     // TODO: implement dispose
@@ -126,31 +125,13 @@ class _PrayerPageState extends State<PrayerPage> {
     super.dispose();
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text("Prayer Wall"),
         actions: <Widget>[
-          IconButton(
-              icon: Icon(
-                Icons.pages,
-                size: 32.0,
-              ),
-              onPressed: () async {
-                setState(() {
-                  showSpinner = true;
-                  print("Spinning!");
-                });
-
-                _viewOnboardingPage();
-
-                setState(() {
-                  showSpinner = false;
-                  print("done!");
-                });
-              }),
+          
           IconButton(
               icon: Icon(Icons.add),
               onPressed: () {
@@ -159,21 +140,30 @@ class _PrayerPageState extends State<PrayerPage> {
               })
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.only(bottom: 30.0, top: 8.0),
-        child: FirebaseAnimatedList(
-          reverse: true,
-          query: prayerRef,
-          itemBuilder: (BuildContext context, DataSnapshot snapshot,
-              Animation<double> animation, int index) {
-            //int total = prayers[index].prayerPostAgreements;
-            return PrayerTab(
-              //total: total,
-              prayer: prayers[index],
-              thisUser: thisUser,
-            );
-          },
-        ),
+      body: Stack(
+        children: [
+          Container(
+            color: Colors.white,
+            height: MediaQuery.of(context).size.height,
+            width: MediaQuery.of(context).size.width,
+          ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 30.0, top: 8.0),
+            child: FirebaseAnimatedList(
+              reverse: false,
+              query: prayerRef,
+              itemBuilder: (BuildContext context, DataSnapshot snapshot,
+                  Animation<double> animation, int index) {
+                //int total = prayers[index].prayerPostAgreements;
+                return PrayerTab(
+                  //total: total,
+                  prayer: prayers[index],
+                  thisUser: thisUser,
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -191,69 +181,83 @@ class PrayerTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        Navigator.push(context, MaterialPageRoute(builder: (context) {
-          return PrayerDetailPage(
-            prayer: prayer,
-            thisUser: thisUser,
-          );
-        }));
-      },
-      child: Card(
-        child: Container(
-          height: 75.0,
-          child: Row(
-            children: <Widget>[
-              Padding(
-                padding: const EdgeInsets.only(left: 8.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    Container(
-                      child: Text(
-                        prayer.prayerPostMonth,
-                        style: TextStyle(
-                            fontSize: 14.0, fontWeight: FontWeight.w500),
+        onTap: () {
+          Navigator.push(context, MaterialPageRoute(builder: (context) {
+            return PrayerDetailPage(
+              prayer: prayer,
+              thisUser: thisUser,
+            );
+          }));
+        },
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                    color: Color.fromARGB(30, 0, 0, 0),
+                    offset: Offset(1, 1),
+                    blurRadius: 10.0,
+                    spreadRadius: 0.5)
+              ],
+            ),
+            height: 200,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: Container(
+                color: Colors.white,
+                height: 75.0,
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            children: [
+                              Text(
+                                prayer.prayerPostMonth,
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              Divider(
+                                height: 2,
+                                color: Colors.black,
+                              ),
+                              Text(prayer.prayerPostDay),
+                            ],
+                          )
+                        ],
                       ),
-                    ),
-                    Container(
-                      child: Text(
-                        prayer.prayerPostDay,
-                        style: TextStyle(
-                            fontSize: 18.0, fontWeight: FontWeight.w500),
+                      SizedBox(
+                        height: 20,
                       ),
-                    )
-                  ],
+                      Row(
+                        children: <Widget>[
+                          Container(
+                            child: Text(
+                              prayer.prayerTitle,
+                              style: TextStyle(
+                                  fontSize: 24.0, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [Text("By: ${prayer.byUserName}")],
+                      ),
+                      SizedBox(
+                        height: 20,
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              SizedBox(
-                width: 20.0,
-              ),
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    Container(
-                      child: Text(
-                        prayer.prayerTitle,
-                        style: TextStyle(
-                            fontSize: 18.0, fontWeight: FontWeight.w500),
-                      ),
-                    ),
-                    SizedBox(
-                      height: 10.0,
-                    ),
-                    Container(
-                      child: Text(prayer.byUserName),
-                    )
-                  ],
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
-    );
+        ));
   }
 }

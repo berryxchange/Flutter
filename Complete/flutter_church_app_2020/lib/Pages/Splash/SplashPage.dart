@@ -35,33 +35,40 @@ class SplashPageState extends State<SplashPage> {
   @override
   Widget build(BuildContext context) {
     // full screen image for splash screen.
-    return Scaffold(
-      body: Container(
-        child: Stack(
-          fit: StackFit.expand,
-          children: <Widget>[
-            Image.asset(
-              "Assets/backgroundImage.png",
-              fit: BoxFit.cover,
-            ),
-            Container(
-              color: Colors.black.withOpacity(0.6),
-            ),
-            Container(
-              child: Center(
-                child: Container(
-                  height: 175,
-                  width: 175,
-                  child: Image.asset(
-                    "Assets/TCILogo.png",
-                    fit: BoxFit.fill,
+    return  Scaffold(
+      body: SafeArea(
+        top: false,
+        bottom: false,
+        child: Container(
+          child: Stack(
+            fit: StackFit.expand,
+            children: <Widget>[
+              Container(
+                height: MediaQuery.of(context).size.height,
+                child: Center(
+                  child: Container(
+                    //height: 175,
+                    //width: 175,
+                    child: Image.asset(
+                      "Assets/SplashImage.png",
+                      //fit: BoxFit.cover,
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+
+              Center(
+                child: Text("Church App", 
+                  style: TextStyle(
+                    fontSize: 50,
+                    color: Colors.white
+                  ),
+                ),
+              )
+            ],
+          )
         ),
-      ),
+      )
     );
   }
 }

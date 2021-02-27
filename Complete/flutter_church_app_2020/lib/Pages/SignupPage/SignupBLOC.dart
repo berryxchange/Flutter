@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
 
-
 //Firebase
 import 'package:flutter_church_app_2020/Firebase/Database/ChurchDB.dart';
 import 'package:flutter_church_app_2020/Firebase/Authentication/auth.dart';
@@ -14,6 +13,7 @@ import 'package:flutter_church_app_2020/Models/UserModel.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_church_app_2020/Pages/Root/RootPage.dart';
 import 'package:flutter_church_app_2020/Pages/Payments/Stripe/Services/payment-service.dart';
+import 'package:progress_dialog/progress_dialog.dart';
 
 class SignupBLOC {
   ChurchDB churchDB;
@@ -21,13 +21,13 @@ class SignupBLOC {
   UserCredential firebaseUser;
   StripePaymentService stripeService = StripePaymentService();
 
-
 //---------- BLOC Logic ------------
   // Working With Image
   File _image;
 
   checkImage(File image, ChurchUserModel thisImageUser) {
-    if (thisImageUser.userImageUrl != "" && thisImageUser.userImageUrl != null) {
+    if (thisImageUser.userImageUrl != "" &&
+        thisImageUser.userImageUrl != null) {
       return Image.file(
         image,
         height: 175,
@@ -35,7 +35,6 @@ class SignupBLOC {
         fit: BoxFit.cover,
       );
     } else {
-
       print("No image bub!");
       return Image.asset(
         "Assets/${"blankUserImage.png"}",
@@ -45,7 +44,6 @@ class SignupBLOC {
       );
     }
   }
-
 
   //switch this to edit profileBLOC
   checkNewImage(File image, ChurchUserModel thisImageUser) {
@@ -83,12 +81,17 @@ class SignupBLOC {
     return image;
   }
 
-
-  Future<bool> submitToFB({BuildContext context, VoidCallback onSignedUp, ChurchUserModel thisUser, bool imageHasChanged}) async {
+  Future<bool> submitToFB(
+      {BuildContext context,
+      VoidCallback onSignedUp,
+      ChurchUserModel thisUser,
+      bool imageHasChanged}) async {
     bool isSignedIn = false;
     try {
       ChurchUserModel thisUploadingUser = thisUser;
-      await createUserWithFB(context, onSignedUp,thisUploadingUser, imageHasChanged);
+
+      await createUserWithFB(
+          context, onSignedUp, thisUploadingUser, imageHasChanged);
 
       isSignedIn = true;
     } catch (error) {
@@ -97,25 +100,27 @@ class SignupBLOC {
     return isSignedIn;
   }
 
-
-  createUserWithFB(BuildContext context, VoidCallback onSignedUp, ChurchUserModel thisUploadingUser, var imageHasChanged)async{
-
-    firebaseUser = await _auth.createUserWithEmailAndPassword(thisUploadingUser.userEmail, thisUploadingUser.password);
+  createUserWithFB(BuildContext context, VoidCallback onSignedUp,
+      ChurchUserModel thisUploadingUser, var imageHasChanged) async {
+   
+    firebaseUser = await _auth.createUserWithEmailAndPassword(
+        thisUploadingUser.userEmail, thisUploadingUser.password);
     thisUploadingUser.userUID = firebaseUser.user.uid;
 
-    StripePaymentService.createNewCustomer(thisUser: thisUploadingUser).then((newPaymentId) {
+
+    StripePaymentService.createNewCustomer(thisUser: thisUploadingUser)
+        .then((newPaymentId) {
       thisUploadingUser.paymentId = newPaymentId;
       if (thisUploadingUser != null) {
         churchDB.launchUsersPath(
             context: context,
             userModel: thisUploadingUser,
             imageHasChanged: imageHasChanged,
-            actionToDo: "create"
-        );
+            actionToDo: "create");
       }
+      
     });
   }
-
 
   //------------- Dialogues --------------
 
@@ -142,9 +147,7 @@ class SignupBLOC {
         });
   }
 
-
   //------------- error handling --------------
-
 
   _checkSignAlertMessage(messaage) {
     if (messaage.contains("password must be 6 characters")) {
@@ -163,8 +166,6 @@ class SignupBLOC {
     }
   }
   //--------------
-
-
 
 //---------- The Constructor ------------
   SignupBLOC() {

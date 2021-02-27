@@ -2,6 +2,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_church_app_2020/Models/PrayerModel.dart';
+import 'package:flutter_church_app_2020/Widget/MainButtonWidgets.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_church_app_2020/Firebase/FCM/ChurchFirebaseMessagingBLOC.dart';
 
@@ -136,6 +137,12 @@ class _AddPrayerPageState extends State<AddPrayerPage> {
       appBar: AppBar(),
       body: ListView(
         children: <Widget>[
+          Container(
+                    child: Image.asset(
+                      "Assets/PrayerImage.png",
+                      fit: BoxFit.fill,
+                    ),
+                  ),
           Padding(
             padding: const EdgeInsets.only(top: 50),
             child: Column(
@@ -203,19 +210,34 @@ class _AddPrayerPageState extends State<AddPrayerPage> {
                             },
                           ),
                         ),
+                        SizedBox(
+                      height: 20,
+                    ),
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 16.0),
-                          child: OutlineButton(
+                          child: Center(
+                            child: FlatSecondaryMainButton(
+                              text: "Submit",
+                              onPressed: (){
+                                handleSubmit();
+                              },
+                              
+                            ),
+                          )
+                          
+                          /*OutlineButton(
                             borderSide:
                                 BorderSide(width: 2, color: Colors.grey),
                             onPressed: () {
                               handleSubmit();
                             },
-                            child: Text('Submit'),
+
+                            child: Center(child: Text('Submit')),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(30),
                             ),
                           ),
+                          */
                         ),
                       ],
                     ),

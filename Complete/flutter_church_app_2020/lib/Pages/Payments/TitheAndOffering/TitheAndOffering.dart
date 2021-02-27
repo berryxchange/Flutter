@@ -10,7 +10,9 @@ class TitheAndOffering extends StatefulWidget {
   static String id = "tithe_and_offering_page"; // page Id
 
   final ChurchUserModel thisUser;
+
   TitheAndOffering({this.thisUser});
+
 
   @override
   _TitheAndOfferingState createState() => _TitheAndOfferingState();
@@ -19,12 +21,9 @@ class TitheAndOffering extends StatefulWidget {
 class _TitheAndOfferingState extends State<TitheAndOffering> {
 
   TitheAndOfferingBLOC titheAndOfferingBLOC;
-
   List<PaymentOptionCardModel> paymentOptions;
-  
   DatabaseReference titheAndOfferingRef;
 
-  
   Color setColors(String thisPaymentColor){
     Color thisColor;
     switch (thisPaymentColor) {
@@ -41,8 +40,7 @@ class _TitheAndOfferingState extends State<TitheAndOffering> {
         thisColor = Colors.deepPurpleAccent;
         break;
     }
-
-    print("New Color: $thisColor");
+    print("New COlor: $thisColor");
     return thisColor;
   }
 
@@ -53,12 +51,8 @@ class _TitheAndOfferingState extends State<TitheAndOffering> {
     titheAndOfferingBLOC = TitheAndOfferingBLOC();
     paymentOptions = titheAndOfferingBLOC.paymentOptions;
 
-// -------
-
     titheAndOfferingRef = FirebaseDatabase.instance.reference()
         .child("TitheAndOffering");
-
-// -------
 
     titheAndOfferingRef.onChildAdded.listen((event) {
       PaymentOptionCardModel thisTitheOrOffering = PaymentOptionCardModel.fromSnapshot(event.snapshot);
@@ -67,10 +61,8 @@ class _TitheAndOfferingState extends State<TitheAndOffering> {
       });
     });
 
-// -------
 
     titheAndOfferingRef.onChildChanged.listen((event) {
-      
       var old = paymentOptions.singleWhere((entry) {
         return entry.key == event.snapshot.key;
       });
@@ -78,13 +70,10 @@ class _TitheAndOfferingState extends State<TitheAndOffering> {
       setState(() {
         paymentOptions[paymentOptions.indexOf(old)] = PaymentOptionCardModel.fromSnapshot(event.snapshot);
       });
-
     });
 
-// -------
 
     titheAndOfferingRef.onChildRemoved.listen((event) {
-      
       var old = paymentOptions.singleWhere((entry) {
         return entry.key == event.snapshot.key;
       });
@@ -92,14 +81,10 @@ class _TitheAndOfferingState extends State<TitheAndOffering> {
       setState(() {
         paymentOptions.removeAt(paymentOptions.indexOf(old));
       });
-
     });
-
-// -------
 
     super.initState();
   }
-
 
 
   @override
@@ -127,19 +112,32 @@ class _TitheAndOfferingState extends State<TitheAndOffering> {
                           Text(paymentOptions[index].title,
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 24,
+                              fontSize: 28,
                               fontWeight: FontWeight.bold
                             ),),
+                            SizedBox(height: 10,),
                           Text(paymentOptions[index].description,
+                          textAlign: TextAlign.center,
                             style: TextStyle(
                               color: Colors.white
                             ),
                           ),
-                          SizedBox(height: 20,),
+                          SizedBox(height: 40,),
                           Padding(
                             padding: const EdgeInsets.all(8.0),
                             child: FlatButton(
-                              onPressed: (){},
+                              onPressed: (){
+                                Navigator.push(context,
+                                  MaterialPageRoute(
+                                    builder: (context) {
+                                      return PaymentSelectionPage(
+                                        thisUser: widget.thisUser,
+                                        paymentType: paymentOptions[index].paymentType,
+                                      );
+                                    },
+                                  ),
+                                );
+                              },
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(8),
                                 child: Container(

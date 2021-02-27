@@ -24,7 +24,7 @@ class PaymentMethodSelectionBLOC{
         title: "Paypal",
         action: "paypal"
     ),
-    PaymentSourceModel(
+    /*PaymentSourceModel(
         title: "Square",
         action: "square"
     ),
@@ -36,6 +36,7 @@ class PaymentMethodSelectionBLOC{
         title: "Kabbage",
         action: "kabbage"
     ),
+    */
   ];
 
   //---------- BLOC Logic -----------

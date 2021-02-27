@@ -18,11 +18,12 @@ import 'package:flutter_church_app_2020/Firebase/Authentication/auth.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_church_app_2020/Firebase/FCM/ChurchFirebaseMessagingBLOC.dart';
+import 'package:flutter_church_app_2020/Pages/SignupPage/TermsOfUse.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ProfilePage extends StatefulWidget {
   static String id = "/profile";
   final ChurchUserModel thisUser;
-
 
   ProfilePage({this.thisUser});
 
@@ -38,6 +39,7 @@ class _ProfilePageState extends State<ProfilePage> {
   //DatabaseReference userRef;
   ChurchUserModel thisUser;
   DatabaseReference userRef;
+  DatabaseReference basicUserRef;
 
   bool appNotificationsBool = false;
   bool locationTrackingBool = false;
@@ -62,13 +64,17 @@ class _ProfilePageState extends State<ProfilePage> {
   }
    */
 
-  handleUpdate(){
-
+  void handleUpdate(BuildContext context) async {
+    await churchDB.launchUsersPath(
+        context: context,
+        userModel: thisUser,
+        imageHasChanged: false,
+        actionToDo: "update");
   }
 
   //for FCM Subscriptions
   void subscribeToPrayers() {
-   firebaseMessagingBLOC.subscribeToPrayers();
+    firebaseMessagingBLOC.subscribeToPrayers();
   }
 
   void unsubscribeToPrayers() {
@@ -83,9 +89,15 @@ class _ProfilePageState extends State<ProfilePage> {
     firebaseMessagingBLOC.unsubscribeToPastoralBlog();
   }
 
+  void subscribeToLiveStream() {
+    firebaseMessagingBLOC.subscribeToLiveStream();
+  }
+
+  void unsubscribeToLiveStream() {
+    firebaseMessagingBLOC.unsubscribeToLiveStream();
+  }
 
   checkImage() {
-
     if (thisUser.userImageUrl != "" && thisUser.userImageUrl != null) {
       return Image.network(
         "${thisUser.userImageUrl}",
@@ -104,11 +116,10 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-   setupListeners() async {
-
+  setupListeners() async {
     userRef.onChildChanged.listen(null).onData((event) {
       print("Data value: ${event.snapshot.key}");
-      if(event.snapshot.key == "thisUserInfo"){
+      if (event.snapshot.key == "thisUserInfo") {
         checkAndSetChangedUserData(event: event).then((value) {
           ChurchUserModel thisNewUser = value;
           print("Final New User data: ${thisNewUser.userLastName}");
@@ -120,9 +131,7 @@ class _ProfilePageState extends State<ProfilePage> {
     });
   }
 
-
-  Future checkAndSetChangedUserData({Event event}) async{
-
+  Future checkAndSetChangedUserData({Event event}) async {
     print("getting new data..");
 
     ChurchUserModel thisUser;
@@ -133,30 +142,45 @@ class _ProfilePageState extends State<ProfilePage> {
     if (thisCurrentUser.userName != null) {
       thisUser = thisCurrentUser;
       print("user is not null");
-    }else{
+    } else {
       print("There is no data");
     }
+
     print("This user is: ${thisUser.userLastName}");
     return thisUser;
   }
 
+//Privacy Policy
+  launchPolicyURL() async {
+    const url = 'http://www.berryxchange.org/privacy-policy/';
+    if (await canLaunch(url)) {
+      await launch(url);
+    } else {
+      throw 'Could not launch $url';
+    }
+  }
 
   @override
   void initState() {
     // TODO: implement initState
 
     thisUser = widget.thisUser;
+    churchDB = ChurchDB();
     firebaseMessagingBLOC = FirebaseMessagingBLOC();
 
     userRef = FirebaseDatabase.instance
         .reference()
         .child('Users')
-        .child(thisUser.userUID);//.child("thisUserInfo");
+        .child(thisUser.userUID); //.child("thisUserInfo");
+
+    basicUserRef = FirebaseDatabase.instance
+        .reference()
+        .child('BasicUserInfo')
+        .child(thisUser.userUID);
 
     setupListeners();
     super.initState();
   }
-
 
   @override
   void dispose() {
@@ -168,8 +192,7 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-      ),
+      appBar: AppBar(),
       body: Padding(
         padding: const EdgeInsets.only(bottom: 12),
         child: ListView(
@@ -207,9 +230,9 @@ class _ProfilePageState extends State<ProfilePage> {
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(75),
                             child: CircleAvatar(
-                                radius: 75,
-                                backgroundColor: Colors.white,
-                                child: checkImage(),
+                              radius: 75,
+                              backgroundColor: Colors.white,
+                              child: checkImage(),
                               //backgroundImage: Image.asset(thisUser.imageUrl),
                             ),
                           ),
@@ -238,11 +261,13 @@ class _ProfilePageState extends State<ProfilePage> {
                                   fontSize: 16,
                                 ),
                               ),
-                              SizedBox(height: 10,),
+                              SizedBox(
+                                height: 10,
+                              ),
                               //checkPhone(),
                               EditButton(
                                 text: "Edit",
-                                onPressed: () async{
+                                onPressed: () async {
                                   print("Im editing!");
                                   var unwind = await Navigator.push(
                                     context,
@@ -254,10 +279,10 @@ class _ProfilePageState extends State<ProfilePage> {
                                       },
                                     ),
                                   );
-                                  if (unwind == true){
+                                  if (unwind == true) {
                                     Navigator.pop(context, true);
                                   }
-                                  if (unwind == "reload"){
+                                  if (unwind == "reload") {
                                     setState(() {
                                       thisUser = thisUser;
                                     });
@@ -272,7 +297,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   Padding(
                     padding:
-                    const EdgeInsets.only(top: 40.0, left: 12, right: 12),
+                        const EdgeInsets.only(top: 40.0, left: 12, right: 12),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -302,25 +327,24 @@ class _ProfilePageState extends State<ProfilePage> {
                               padding: const EdgeInsets.only(
                                   top: 30.0, left: 20, right: 20, bottom: 20),
                               child: Container(
-                                height: 150,
+                                height: 75,
                                 child: Column(
                                   children: [
-
-                                    GestureDetector(
+                                    /*GestureDetector(
                                       onTap: () {
                                         print("Push to Change Password");
                                         Navigator.push(context,
                                             MaterialPageRoute(
-                                              builder: (context) {
-                                                return Container();//ChangePasswordPage();
-                                              },
-                                            ));
+                                          builder: (context) {
+                                            return Container(); //ChangePasswordPage();
+                                          },
+                                        ));
 
                                         //Navigator.pushNamed(context, ChangePasswordPage.id);
                                       },
                                       child: Row(
                                         mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
+                                            MainAxisAlignment.spaceBetween,
                                         children: [
                                           Expanded(
                                               child: Text("Change Password")),
@@ -336,6 +360,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                     SizedBox(
                                       height: 20,
                                     ),
+                                    */
                                     GestureDetector(
                                       onTap: () {
                                         print("Push to User Address");
@@ -344,8 +369,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                           MaterialPageRoute(
                                             builder: (context) {
                                               return UserAddressPage(
-                                                thisUser: thisUser
-                                                );
+                                                  thisUser: thisUser);
                                             },
                                           ),
                                         );
@@ -353,10 +377,10 @@ class _ProfilePageState extends State<ProfilePage> {
                                       },
                                       child: Row(
                                         mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
+                                            MainAxisAlignment.spaceBetween,
                                         children: [
                                           Expanded(
-                                              child: Text("Delivery Address")),
+                                              child: Text("Address")),
                                         ],
                                       ),
                                     ),
@@ -372,22 +396,24 @@ class _ProfilePageState extends State<ProfilePage> {
                                     GestureDetector(
                                       onTap: () {
                                         print("Push to Payment");
-                                        Navigator.push(
+                                        /*Navigator.push(
                                           context,
-                                          MaterialPageRoute(
-                                            builder: (context) {
-                                              return UserPaymentMethodsPage(
+                                          MaterialPageRoute(builder: (context) {
+                                            return UserPaymentMethodsPage(
                                               thisUser: thisUser,
-                                              );
-                                            }
-                                          ),
+                                            );
+                                          }),
                                         );
+                                        */
                                       },
                                       child: Row(
                                         mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
+                                            MainAxisAlignment.spaceBetween,
                                         children: [
-                                          Expanded(child: Text("Payments")),
+                                          Expanded(child: Text("Payments (Unavailable)",
+                                          style: TextStyle(
+                                            color: Colors.grey
+                                          ),)),
                                         ],
                                       ),
                                     ),
@@ -433,74 +459,76 @@ class _ProfilePageState extends State<ProfilePage> {
                                   ),
                                   Row(
                                     mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Text("App Notifications"),
+                                      Text("App Notifications", 
+                                      style: TextStyle(
+                                        color: Colors.grey
+                                      ),),
                                       CupertinoSwitch(
-                                        value: thisUser.mainNotification,//set userNotifications thisInternalUser.mainNotification,
+                                        value: thisUser
+                                            .mainNotification, //set userNotifications thisInternalUser.mainNotification,
                                         onChanged: (bool newValue) {
                                           //setState(() {
-                                            //thisInternalUser.mainNotification = newValue;
-                                            //print(thisInternalUser.mainNotification);
-                                            //handleUpdate();
+                                          //thisInternalUser.mainNotification = newValue;
+                                          //print(thisInternalUser.mainNotification);
+                                          //handleUpdate();
                                           //});
                                         },
                                       )
                                     ],
                                   ),
-                                  SizedBox(
+                                  /*SizedBox(
                                     height: 10,
                                   ),
-
                                   Divider(
                                     height: 1,
                                   ),
-
                                   SizedBox(
                                     height: 10,
                                   ),
-
                                   Row(
                                     mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Text("Social Notifications"),
+                                      Text("Social Notifications", 
+                                        style: TextStyle(
+                                          color: Colors.grey
+                                        ),
+                                      ),
                                       CupertinoSwitch(
                                         value: thisUser.socialNotification,
                                         onChanged: (bool newValue) {
                                           //setState(() {
-                                            //thisInternalUser.socialNotification = newValue;
-                                            //print(thisInternalUser.socialNotification);
-                                            //handleUpdate();
+                                          //thisInternalUser.socialNotification = newValue;
+                                          //print(thisInternalUser.socialNotification);
+                                          //handleUpdate();
                                           //});
                                         },
                                       )
                                     ],
                                   ),
-
+                                  */
                                   SizedBox(
                                     height: 10,
                                   ),
-
                                   Divider(
                                     height: 1,
                                   ),
-
                                   SizedBox(
                                     height: 10,
                                   ),
-
                                   Row(
                                     mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text("Prayer Notifications"),
                                       CupertinoSwitch(
                                         value: thisUser.prayerNotification,
                                         onChanged: (bool newValue) {
-
                                           setState(() {
-                                            thisUser.prayerNotification = newValue;
+                                            thisUser.prayerNotification =
+                                                newValue;
                                             print(thisUser.prayerNotification);
                                             if (thisUser.prayerNotification ==
                                                 true) {
@@ -509,16 +537,51 @@ class _ProfilePageState extends State<ProfilePage> {
                                               this.unsubscribeToPrayers();
                                             }
 
-                                            handleUpdate();
+                                            handleUpdate(context);
                                           });
                                         },
                                       )
                                     ],
                                   ),
-
+                                  /*SizedBox(
+                                    height: 10,
+                                  ),
+                                  Divider(
+                                    height: 1,
+                                  ),
                                   SizedBox(
                                     height: 10,
                                   ),
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text("Live Stream Notifications"),
+                                      CupertinoSwitch(
+                                        value: thisUser.liveStreamNotification,
+                                        onChanged: (bool newValue) {
+                                          setState(() {
+                                            thisUser.liveStreamNotification =
+                                                newValue;
+                                            print(thisUser
+                                                .liveStreamNotification);
+                                            if (thisUser
+                                                    .liveStreamNotification ==
+                                                true) {
+                                              this.subscribeToLiveStream();
+                                            } else {
+                                              this.unsubscribeToLiveStream();
+                                            }
+                                          });
+                                          handleUpdate(context);
+                                        },
+                                      )
+                                    ],
+                                  ),
+                                  SizedBox(
+                                    height: 10,
+                                  ),
+                                  */
                                 ],
                               ),
                             ),
@@ -561,12 +624,18 @@ class _ProfilePageState extends State<ProfilePage> {
                                   GestureDetector(
                                     onTap: () {
                                       print("Push to Terms of Service");
+                                      Navigator.push(context, MaterialPageRoute(
+                                      builder: (context) {
+                                        return TermsOfUsePage();
+                                      },
+                                    ));
                                     },
                                     child: Row(
                                       mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
-                                        Expanded(child: Text("Terms of Service")),
+                                        Expanded(
+                                            child: Text("Terms of Service")),
                                       ],
                                     ),
                                   ),
@@ -582,57 +651,17 @@ class _ProfilePageState extends State<ProfilePage> {
                                   GestureDetector(
                                     onTap: () {
                                       print("Push to Privacy Policy");
+                                      launchPolicyURL();
                                     },
                                     child: Row(
                                       mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
                                         Expanded(child: Text("Privacy Policy")),
                                       ],
                                     ),
                                   ),
-                                  SizedBox(
-                                    height: 20,
-                                  ),
-                                  Divider(
-                                    height: 1,
-                                  ),
-                                  SizedBox(
-                                    height: 20,
-                                  ),
-                                  GestureDetector(
-                                    onTap: () {
-                                      print("Push to Language");
-                                    },
-                                    child: Row(
-                                      mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Expanded(child: Text("Language")),
-                                      ],
-                                    ),
-                                  ),
-                                  SizedBox(
-                                    height: 20,
-                                  ),
-                                  Divider(
-                                    height: 1,
-                                  ),
-                                  SizedBox(
-                                    height: 20,
-                                  ),
-                                  GestureDetector(
-                                    onTap: () {
-                                      print("Push to Currency");
-                                    },
-                                    child: Row(
-                                      mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Expanded(child: Text("Currency")),
-                                      ],
-                                    ),
-                                  ),
+                                  
                                 ],
                               ),
                             ),

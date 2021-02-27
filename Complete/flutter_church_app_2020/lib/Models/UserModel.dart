@@ -25,6 +25,7 @@ abstract class ChurchUserProtocol {
   bool pastoralNotification = false;
   bool prayerNotification = false;
   bool socialNotification = false;
+  bool liveStreamNotification = false;
   bool isAdmin;
   String userUID;
   bool isViewedIntroOnboarding = false;
@@ -36,7 +37,6 @@ abstract class ChurchUserProtocol {
   String token;
   String paymentId;
 
-
   addAddressToList(UserAddressProtocol address) {
     this.userAddresses.add(address);
   }
@@ -45,13 +45,20 @@ abstract class ChurchUserProtocol {
     this.userAddresses.remove(address);
   }
 
-  addPaymentToHistory({BuildContext context, PaymentOrderModel paidOrder, ChurchUserModel thisUser, String paymentType}){
+  addPaymentToHistory(
+      {BuildContext context,
+      PaymentOrderModel paidOrder,
+      ChurchUserModel thisUser,
+      String paymentType}) {
     setUserOrdersToFBCurrentHistory(context, paidOrder, thisUser, paymentType);
   }
 
   //firebase Post
-  void setUserOrdersToFBCurrentHistory(BuildContext context, PaymentOrderModel thisNewOrder, ChurchUserModel thisUser, String paymentType) async{
-
+  void setUserOrdersToFBCurrentHistory(
+      BuildContext context,
+      PaymentOrderModel thisNewOrder,
+      ChurchUserModel thisUser,
+      String paymentType) async {
     //create FB Singleton Instance to use its properties
     ChurchDB churchDB = ChurchDB();
 
@@ -63,17 +70,15 @@ abstract class ChurchUserProtocol {
         thisNewOrder: thisNewOrder,
         churchDB: churchDB,
         thisUser: thisUser,
-        paymentType: paymentType
-    );
-
+        paymentType: paymentType);
   }
 
-  setCurrentOrder({
-    BuildContext context,
-    PaymentOrderModel thisNewOrder,
-    ChurchDB churchDB,
-    ChurchUserModel thisUser,
-    String paymentType}){
+  setCurrentOrder(
+      {BuildContext context,
+      PaymentOrderModel thisNewOrder,
+      ChurchDB churchDB,
+      ChurchUserModel thisUser,
+      String paymentType}) {
     try {
       //check if user UID exists
       if (thisUser.userUID != null) {
@@ -86,8 +91,7 @@ abstract class ChurchUserProtocol {
             thisUser: this,
             thisOrder: thisNewOrder,
             paymentType: paymentType,
-            actionToDo: "create"
-        );
+            actionToDo: "create");
 
         //---------------
 
@@ -95,17 +99,12 @@ abstract class ChurchUserProtocol {
         print("this user is not in the database...");
       }
       //end of if statement
-    }catch (error){
+    } catch (error) {
       print("something went wrong: $error");
     }
   }
 //end of protocol
 }
-
-
-
-
-
 
 class ChurchUserModel extends ChurchUserProtocol {
   String key;
@@ -128,6 +127,7 @@ class ChurchUserModel extends ChurchUserProtocol {
   bool pastoralNotification = false;
   bool prayerNotification = false;
   bool socialNotification = false;
+  bool liveStreamNotification = false;
   bool isAdmin = false;
   String userUID = "";
   bool isViewedIntroOnboarding = false;
@@ -138,37 +138,37 @@ class ChurchUserModel extends ChurchUserProtocol {
   String token;
   String paymentId;
 
-  ChurchUserModel({
-    this.userFirstName,
-    this.userLastName,
-    this.userEmail,
-    this.userRole,
-    this.userImageUrl,
-    this.userName,
-    this.password,
-    this.chatNotification,
-    this.mainNotification,
-    this.mediaNotification,
-    this.pastoralNotification,
-    this.prayerNotification,
-    this.socialNotification,
-    this.isAdmin,
-    this.userUID,
-    this.isViewedIntroOnboarding,
-    this.isViewedAdminOnboarding,
-    this.isViewedPrayerOnboarding,
-    this.isViewedProfileOnboarding,
-    this.userAddresses,
-    this.token,
-    this.paymentId
-  });
+  ChurchUserModel(
+      {this.userFirstName,
+      this.userLastName,
+      this.userEmail,
+      this.userRole,
+      this.userImageUrl,
+      this.userName,
+      this.password,
+      this.chatNotification,
+      this.mainNotification,
+      this.mediaNotification,
+      this.pastoralNotification,
+      this.prayerNotification,
+      this.socialNotification,
+      this.liveStreamNotification,
+      this.isAdmin,
+      this.userUID,
+      this.isViewedIntroOnboarding,
+      this.isViewedAdminOnboarding,
+      this.isViewedPrayerOnboarding,
+      this.isViewedProfileOnboarding,
+      this.userAddresses,
+      this.token,
+      this.paymentId});
 
   ChurchUserModel.fromSnapshot(DataSnapshot snapshot)
       : key = snapshot.key,
         userFirstName = snapshot.value["firstname"],
         userLastName = snapshot.value["lastname"],
         userEmail = snapshot.value["email"],
-        userRole = snapshot.value["role"],
+        userRole = snapshot.value["userRole"],
         userImageUrl = snapshot.value["userImageUrl"],
         userName = snapshot.value["username"],
         password = snapshot.value["password"],
@@ -178,6 +178,7 @@ class ChurchUserModel extends ChurchUserProtocol {
         pastoralNotification = snapshot.value["pastoralBlogNotification"],
         prayerNotification = snapshot.value["prayerNotification"],
         socialNotification = snapshot.value["socialNotification"],
+        liveStreamNotification = snapshot.value["liveStreamNotification"],
         isAdmin = snapshot.value["isAdmin"],
         userUID = snapshot.value["userUID"],
         //isViewedIntroOnboarding = snapshot.value["isViewedIntroOnboarding"],
@@ -203,14 +204,15 @@ class ChurchUserModel extends ChurchUserProtocol {
       "pastoralBlogNotification": pastoralNotification,
       "prayerNotification": prayerNotification,
       "socialNotification": socialNotification,
+      "liveStreamNotification":liveStreamNotification,
       "isAdmin": isAdmin,
       "userUID": userUID,
-      "isViewedIntroOnboarding": isViewedIntroOnboarding ,
+      "isViewedIntroOnboarding": isViewedIntroOnboarding,
       "isViewedAdminOnboarding": isViewedAdminOnboarding,
       "isViewedPrayerOnboarding": isViewedPrayerOnboarding,
       "isViewedProfileOnboarding": isViewedProfileOnboarding,
       "token": token,
-      "paymentId":paymentId
+      "paymentId": paymentId
     };
   }
 }

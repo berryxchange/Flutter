@@ -9,6 +9,8 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_church_app_2020/Models/UserModel.dart';
 import 'dart:async';
 import 'package:flutter_church_app_2020/Pages/PrayerPage/PrayerPage.dart';
+import 'package:flutter_church_app_2020/Pages/Media/Video/VideoMediaPage.dart';
+
 
 class FirebaseMessagingBLOC {
   FirebaseAuth auth = AuthCentral.auth;
@@ -276,6 +278,18 @@ class FirebaseMessagingBLOC {
     print("unsubsribed to pastoral blog");
   }
 
+  void subscribeToLiveStream() {
+    _fcm.subscribeToTopic("liveStreamNotification");
+    print("subsribed to live stream ministry");
+  }
+
+  void unsubscribeToLiveStream() {
+    _fcm.unsubscribeFromTopic("liveStreamNotification");
+    print("unsubsribed to live stream ministry");
+  }
+
+
+
 
 
   //sending to device
@@ -293,6 +307,13 @@ class FirebaseMessagingBLOC {
           builder: (context) {
             return PrayerPage(thisUser: thisUser,);
           },
+        ));
+      case "liveStream":
+      //Navigator.of(context).pop();
+        return Navigator.push(context, MaterialPageRoute(
+          builder: (context) {
+            return VideoMediaPage(thisAdmin: thisUser);
+          },
         ));//Navigator.popAndPushNamed(context, PrayerPage.id, );
     }
   }
@@ -307,6 +328,13 @@ class FirebaseMessagingBLOC {
         return Navigator.push(context, MaterialPageRoute(
           builder: (context) {
             return PrayerPage(thisUser: thisUser,);
+          },
+        ));
+      case "liveStream":
+      //Navigator.of(context).pop();
+        return Navigator.push(context, MaterialPageRoute(
+          builder: (context) {
+            return VideoMediaPage(thisAdmin: thisUser);
           },
         ));//Navigator.pushNamed(context, PrayerPage.id);
     }
@@ -329,6 +357,9 @@ class FirebaseMessagingBLOC {
         break;
       case "prayer":
         FCMDestination = 'prayer';
+        break;
+      case "liveStream":
+        FCMDestination = 'liveStream';
         break;
     }
 

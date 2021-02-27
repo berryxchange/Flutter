@@ -19,10 +19,10 @@ import 'dart:io';
 import 'package:flutter_church_app_2020/Pages/Payments/Stripe/Services/payment-service.dart';
 
 class ChurchDB {
-
   //instance
   static final ChurchDB _instance = ChurchDB._internal();
-  final FirebaseDatabase database = FirebaseDatabase.instance;//FirebaseDatabase.instance
+  final FirebaseDatabase database =
+      FirebaseDatabase.instance; //FirebaseDatabase.instance
   final _auth = AuthCentral.auth;
   List<ChurchUserModel> users = [];
 
@@ -33,27 +33,40 @@ class ChurchDB {
 
   //references
   //Users
-  DatabaseReference usersRef = FirebaseDatabase.instance.reference().child("Users");
-  DatabaseReference basicUserInfoRef = FirebaseDatabase.instance.reference().child("BasicUserInfo");
-  StorageReference userStorageRef = FirebaseStorage.instance.ref().child('Users');
-  DatabaseReference ministryRef = FirebaseDatabase.instance.reference().child('SystemChecks');
+  DatabaseReference usersRef =
+      FirebaseDatabase.instance.reference().child("Users");
+  DatabaseReference basicUserInfoRef =
+      FirebaseDatabase.instance.reference().child("BasicUserInfo");
+  StorageReference userStorageRef =
+      FirebaseStorage.instance.ref().child('Users');
+  DatabaseReference ministryRef =
+      FirebaseDatabase.instance.reference().child('SystemChecks');
   //DatabaseReference usersRef = FirebaseDatabase.instance.reference().child("Users");
   //StorageReference userStorageRef = FirebaseStorage.instance.ref().child('Users');
   //Ministries
   //DatabaseReference ministryRef = FirebaseDatabase.instance.reference().child('SystemChecks');
 
-
-
   //functions
   //------------------ actions by App sections --------------------
 
-
   //----------- Users -----------
-  Future launchUsersPath({BuildContext context, ChurchUserModel userModel, var imageHasChanged, String actionToDo, String userUIDToCheck}) async {
-
+   launchUsersPath(
+      {BuildContext context,
+      ChurchUserModel userModel,
+      var imageHasChanged,
+      String actionToDo,
+      String userUIDToCheck}) async {
+    
     DatabaseReference thisUserPath;
-    if (userModel != null){
-      thisUserPath = database.reference().child('Users').child("${userModel.userUID}");
+    DatabaseReference thisUserBasicPath;
+
+    if (userModel != null) {
+      print("Not empty");
+      thisUserPath =
+          database.reference().child('Users').child("${userModel.userUID}");
+        thisUserBasicPath = basicUserInfoRef.child("${userModel.userUID}");
+    }else {
+      print("this is an empty user..");
     }
 
     ChurchUserModel thisReturningUser;
@@ -61,7 +74,7 @@ class ChurchDB {
     //do the action
     switch (actionToDo) {
       case ("create"):
-        createUserObject(context, thisUserPath, userModel, imageHasChanged);
+        createUserObject(context, thisUserPath, thisUserBasicPath, userModel, imageHasChanged);
         break;
       case ("read"):
         await readUserObject(userUIDToCheck).then((value) {
@@ -70,35 +83,36 @@ class ChurchDB {
         });
         break;
       case ("update"):
-        updateUserObject(context, thisUserPath, userModel, imageHasChanged);
+        updateUserObject(context, thisUserPath, thisUserBasicPath, userModel, imageHasChanged);
         break;
       case ("delete"):
-        deleteUserObject(thisUserPath, userModel);
+        deleteUserObject(thisUserPath, thisUserBasicPath, userModel);
         break;
     }
     return thisReturningUser;
   }
 
   //Create
-   createUserObject(BuildContext context, DatabaseReference databasePath, ChurchUserModel userModel, bool imageHasChanged) async {
+  createUserObject(BuildContext context, DatabaseReference databasePath, DatabaseReference basicDatabasePath,
+      ChurchUserModel userModel, bool imageHasChanged) async {
     //Create the image address from Storage, then add the item to the database
 
-     var thisNewUser = userModel;
+    var thisNewUser = userModel;
 
-     thisNewUser.isAdmin = false;
-     thisNewUser.chatNotification = false;
-     thisNewUser.mainNotification = false;
-     thisNewUser.mediaNotification = false;
-     thisNewUser.prayerNotification = true;
-     thisNewUser.socialNotification = false;
-     thisNewUser.userRole = "basic";
+    thisNewUser.isAdmin = false;
+    thisNewUser.chatNotification = false;
+    thisNewUser.mainNotification = true;
+    thisNewUser.mediaNotification = false;
+    thisNewUser.prayerNotification = true;
+    thisNewUser.socialNotification = false;
+    thisNewUser.liveStreamNotification = false;
+    thisNewUser.userRole = "basic";
 
-
-     if(imageHasChanged == true){
-       launchUserImagePath(context, thisNewUser, "create");
-     }else{
-       //do something else
-     }
+    if (imageHasChanged == true) {
+      launchUserImagePath(context, thisNewUser, basicDatabasePath ,"create");
+    } else {
+      //do something else
+    }
   }
 
   //Read
@@ -107,8 +121,7 @@ class ChurchDB {
 
     ChurchUserModel sendableNewUser = ChurchUserModel();
     usersRef.child(userToCheck).onChildAdded.listen(null).onData((data) {
-
-      if(data.snapshot.key == "thisUserInfo") {
+      if (data.snapshot.key == "thisUserInfo") {
         ChurchUserModel tempUser = ChurchUserModel();
         checkAndSetUserData(event: data).then((value) {
           returningUser = value;
@@ -119,9 +132,7 @@ class ChurchDB {
     return returningUser;
   }
 
-
-  Future checkAndSetUserData({Event event}) async{
-
+  Future checkAndSetUserData({Event event}) async {
     ChurchUserModel thisUser = ChurchUserModel();
 
     var thisCurrentUser = ChurchUserModel.fromSnapshot(event.snapshot);
@@ -130,17 +141,14 @@ class ChurchDB {
     if (thisCurrentUser.userName != null) {
       thisUser = thisCurrentUser;
       print("user is not null");
-    }else{
+    } else {
       print("There is no data");
     }
     print("This user is: ${thisUser.userLastName}");
     return thisUser;
   }
 
-
   _onPrayerPostUserAdded(Event event) {
-
-
     /*
     if (ChurchUserModel.fromSnapshot(event.snapshot).userUID ==
         widget.prayer.byUserUID) {
@@ -156,33 +164,36 @@ class ChurchDB {
      */
   }
 
-
   //Update
-  void updateUserObject(BuildContext context, DatabaseReference databasePath, ChurchUserModel userModel, bool imageHasChanged) {
+  void updateUserObject(BuildContext context, DatabaseReference databasePath, DatabaseReference basicDatabasePath,
+      ChurchUserModel userModel, bool imageHasChanged) {
     //update the item in the database
     var userInfoPath = databasePath.child("thisUserInfo");
 
     userInfoPath.update(userModel.toJson());
+    basicDatabasePath.update(userModel.toJson());
 
-    if(imageHasChanged == true){
+    if (imageHasChanged == true) {
       print("launching image");
-      launchUserImagePath(context, userModel, "update");
-    }else{
+      launchUserImagePath(context, userModel, basicDatabasePath, "update");
+    } else {
       //do something else
     }
-
   }
 
   //Delete
-  void deleteUserObject(DatabaseReference databasePath, var object) {
+  void deleteUserObject(DatabaseReference databasePath, DatabaseReference basicDatabasePath, var object) {
     //delete the item from the database
   }
   //-----------
 
   //----------- Ministries -----------
 
-   launchMinistryPath({BuildContext context, MinistryModel ministryModel, bool isAdmin, String actionToDo}) async {
-
+  launchMinistryPath(
+      {BuildContext context,
+      MinistryModel ministryModel,
+      bool isAdmin,
+      String actionToDo}) async {
     final thisMinistryPath = ministryRef;
 
     bool _thisIsInUse;
@@ -205,7 +216,7 @@ class ChurchDB {
         deleteMinistryObject(thisMinistryPath, ministryModel);
         break;
       case ("deleteAll"):
-          deleteAllMinistryObjects(thisMinistryPath);
+        deleteAllMinistryObjects(thisMinistryPath);
         break;
     }
     return _thisIsInUse;
@@ -222,11 +233,12 @@ class ChurchDB {
     refKey.set(ministryModel.toJson());
   }
 
-  createMinistryChecksObject(BuildContext context, DatabaseReference databasePath,
-      MinistryModel ministryModel) async {
+  createMinistryChecksObject(BuildContext context,
+      DatabaseReference databasePath, MinistryModel ministryModel) async {
     // for App Creator Only
     var allMinistriesToCheckRefKey = databasePath.child("AllMinistriesToCheck");
-    var ministryToCheck = allMinistriesToCheckRefKey.child("${ministryModel.ministryName}");
+    var ministryToCheck =
+        allMinistriesToCheckRefKey.child("${ministryModel.ministryName}");
     ministryToCheck.set(ministryModel.checksToJson());
   }
 
@@ -249,30 +261,28 @@ class ChurchDB {
         if (event.snapshot.key == "Administrator") {
           print("this is an administrator item and cannot be used here");
         } else {
-            ministries.add(MinistryModel.fromSnapshot(event.snapshot));
+          ministries.add(MinistryModel.fromSnapshot(event.snapshot));
           print(ministries);
         }
       }
     }
-
 
     _onMinistryEntryChanged(Event event) {
       var old = ministries.singleWhere((entry) {
         return entry.key == event.snapshot.key;
       });
 
-      ministries[ministries.indexOf(old)] = MinistryModel.fromSnapshot(event.snapshot);
+      ministries[ministries.indexOf(old)] =
+          MinistryModel.fromSnapshot(event.snapshot);
     }
-
 
     _onMinistryChildRemoved(Event event) {
       var old = ministries.singleWhere((entry) {
         return entry.key == event.snapshot.key;
       });
-        //ministries[ministries.indexOf(old)] = Ministry.fromSnapshot(event.snapshot);
-        ministries.removeAt(ministries.indexOf(old));
+      //ministries[ministries.indexOf(old)] = Ministry.fromSnapshot(event.snapshot);
+      ministries.removeAt(ministries.indexOf(old));
     }
-
 
     //Listeners
     ministryRef.onChildAdded.listen(_onMinistryEntryAdded);
@@ -281,7 +291,6 @@ class ChurchDB {
 
     return ministries;
   }
-
 
   //Update
   void updateMinistryObject(DatabaseReference databasePath, var object) {
@@ -292,7 +301,8 @@ class ChurchDB {
   }
 
   //Delete
-  void deleteMinistryObject(DatabaseReference databasePath, MinistryModel ministryModel) {
+  void deleteMinistryObject(
+      DatabaseReference databasePath, MinistryModel ministryModel) {
     //delete the item from the database
     var allMinistriesToLoad = databasePath.child("AllMinistriesToLoad");
     var refKey = allMinistriesToLoad.child("${ministryModel.ministryName}");
@@ -307,7 +317,8 @@ class ChurchDB {
   //-----------
 
   //For User Address
-  void launchUserAddressesPath(ChurchUserModel thisUser, UserAddressModel address, String actionToDo) {
+  void launchUserAddressesPath(
+      ChurchUserModel thisUser, UserAddressModel address, String actionToDo) {
     final thisAddressPath = database
         .reference()
         .child('Users')
@@ -360,11 +371,10 @@ class ChurchDB {
     //delete the item from the database
   }
 
-
-
   //for adding payment cards
 
-  void launchUserCardsPath(ChurchUserModel thisUser, CreditCardModel card, String actionToDo) {
+  void launchUserCardsPath(
+      ChurchUserModel thisUser, CreditCardModel card, String actionToDo) {
     final thisCardPath = database
         .reference()
         .child('Users')
@@ -389,7 +399,8 @@ class ChurchDB {
   }
 
   //Create
-  void createCardObject(DatabaseReference databasePath, CreditCardModel thisCard) {
+  void createCardObject(
+      DatabaseReference databasePath, CreditCardModel thisCard) {
     //add the item to the database
     print("Adding a card the list");
 
@@ -417,24 +428,21 @@ class ChurchDB {
     //delete the item from the database
   }
 
-
   //----------- Users -----------
 
-  launchOrderPath({
-    BuildContext context,
-    ChurchUserModel thisUser,
-    PaymentOrderModel thisOrder,
-    String paymentType,
-    String actionToDo
-  }) {
-
-    final thisOrderPath = database.reference()
+  launchOrderPath(
+      {BuildContext context,
+      ChurchUserModel thisUser,
+      PaymentOrderModel thisOrder,
+      String paymentType,
+      String actionToDo}) {
+    final thisOrderPath = database
+        .reference()
         .child('Users')
         .child("${thisUser.userUID}")
         .child("Orders")
         .child(paymentType)
         .child(thisOrder.orderName);
-
 
     //do the action
     switch (actionToDo) {
@@ -453,14 +461,9 @@ class ChurchDB {
     }
   }
 
-
   //Create
-  createOrderObject(
-      BuildContext context,
-      DatabaseReference databasePath,
-      ChurchUserModel userModel,
-      PaymentOrderModel thisOrder) async {
-
+  createOrderObject(BuildContext context, DatabaseReference databasePath,
+      ChurchUserModel userModel, PaymentOrderModel thisOrder) async {
     //Create the image address from Storage, then add the item to the database
     var thisOrderPathRef = databasePath;
     thisOrderPathRef.update(thisOrder.toJson());
@@ -472,7 +475,8 @@ class ChurchDB {
   }
 
   //Update
-  void updateOrderObject(BuildContext context, DatabaseReference databasePath, ChurchUserModel userModel) {
+  void updateOrderObject(BuildContext context, DatabaseReference databasePath,
+      ChurchUserModel userModel) {
     //update the item in the database
     var userInfoPath = databasePath.child("thisUserInfo");
 
@@ -486,26 +490,27 @@ class ChurchDB {
   //-----------
   //------------- End --------------
 
-
-
-
   //------------Storage Database --------------
 
-  launchUserImagePath(BuildContext context, ChurchUserModel userModel, String actionToDo) {
-    StorageReference thisUserImagePath = userStorageRef.child("${userModel.userUID}");
-    final thisUserPath = database.reference().child('Users').child("${userModel.userUID}");
+  launchUserImagePath(
+      BuildContext context, ChurchUserModel userModel, DatabaseReference basicDatabasePath, String actionToDo) {
+    StorageReference thisUserImagePath =
+        userStorageRef.child("${userModel.userUID}");
+    final thisUserPath =
+        database.reference().child('Users').child("${userModel.userUID}");
 
     //do the action
     switch (actionToDo) {
       case ("create"):
         createUserImageObject(
-            context, thisUserPath, thisUserImagePath, userModel);
+            context, thisUserPath, basicDatabasePath, thisUserImagePath, userModel);
         break;
       case ("read"):
         readUserImageObject(thisUserImagePath, userModel);
         break;
       case ("update"):
-        updateUserImageObject(context, thisUserImagePath, thisUserPath, userModel);
+        updateUserImageObject(
+            context, thisUserImagePath, thisUserPath, basicDatabasePath, userModel);
         break;
       case ("delete"):
         deleteUserImageObject(thisUserImagePath, userModel);
@@ -514,88 +519,76 @@ class ChurchDB {
   }
 
   //Create
-  createUserImageObject(BuildContext context, DatabaseReference databasePath, StorageReference storagePath,
-      ChurchUserModel userModel) async {
-
+  createUserImageObject(BuildContext context, DatabaseReference databasePath, DatabaseReference basicDatabasePath,
+      StorageReference storagePath, ChurchUserModel userModel) async {
     var userImageInfoPath = storagePath.child("ProfileImage");
     var userInfoPath = databasePath.child("thisUserInfo");
 
-    handleStorageTask(context, userInfoPath, userImageInfoPath, userModel);
+    handleStorageTask(context, userInfoPath, basicDatabasePath, userImageInfoPath, userModel);
   }
 
+  handleStorageTask(BuildContext context, DatabaseReference userInfoPath, DatabaseReference basicDatabasePath,
+      StorageReference userImageInfoPath, ChurchUserModel userModel) async {
+    StorageUploadTask uploadTask =
+        userImageInfoPath.putFile(File(userModel.userImageUrl));
 
-  handleStorageTask(BuildContext context, DatabaseReference userInfoPath, StorageReference userImageInfoPath, ChurchUserModel userModel) async{
+    await uploadTask.onComplete;
 
-      StorageUploadTask uploadTask = userImageInfoPath.putFile(
-          File(userModel.userImageUrl)
-      );
-
-      await uploadTask.onComplete;
-
-        print('File Uploaded');
-        handleUserDataStorage(context, userInfoPath ,userImageInfoPath, userModel);
-
-
+    print('File Uploaded');
+    handleUserDataStorage(context, userInfoPath, basicDatabasePath, userImageInfoPath, userModel);
   }
 
-  handleUserDataStorage(BuildContext context, DatabaseReference userInfoPath, StorageReference userImageInfoPath, ChurchUserModel userModel){
-
+  handleUserDataStorage(BuildContext context, DatabaseReference userInfoPath, DatabaseReference basicDatabasePath,
+      StorageReference userImageInfoPath, ChurchUserModel userModel) {
     userImageInfoPath.getDownloadURL().then((fileURL) {
       ChurchUserModel thisUploadingUser = userModel;
       thisUploadingUser.userImageUrl = fileURL;
 
-      checkUserImageDataAndUpload(context, thisUploadingUser, userInfoPath);
-
+      checkUserImageDataAndUpload(context, thisUploadingUser, userInfoPath, basicDatabasePath);
     });
   }
 
-  checkUserImageDataAndUpload(BuildContext context, ChurchUserModel thisUploadingUser, DatabaseReference userInfoPath){
-
+  checkUserImageDataAndUpload(BuildContext context,
+      ChurchUserModel thisUploadingUser, DatabaseReference userInfoPath, DatabaseReference basicDatabasePath) {
     //if (thisUploadingUser.userImageUrl == "" || thisUploadingUser.userImageUrl == null) {
 
-      //thisUploadingUser.userImageUrl = "blankUserImage.png";
-      //uploadDataToDB(context, onSignedUp, thisUploadingUser, userInfoPath);
+    //thisUploadingUser.userImageUrl = "blankUserImage.png";
+    //uploadDataToDB(context, onSignedUp, thisUploadingUser, userInfoPath);
 
     //} else {
-      uploadDataToDB(context, thisUploadingUser, userInfoPath);
+    uploadDataToDB(context, thisUploadingUser, userInfoPath, basicDatabasePath);
     //}
   }
 
-  uploadDataToDB(BuildContext context, ChurchUserModel thisUploadingUser, DatabaseReference userInfoPath){
-    var thisBasicUser = basicUserInfoRef.child(thisUploadingUser.userUID);
-    thisBasicUser.update(thisUploadingUser.toJson());
-
+  uploadDataToDB(BuildContext context, ChurchUserModel thisUploadingUser,
+      DatabaseReference userInfoPath, DatabaseReference basicDatabasePath) {
+    
+    //var thisBasicUser = basicUserInfoRef.child(thisUploadingUser.userUID);
+    basicUserInfoRef.update(thisUploadingUser.toJson());
     userInfoPath.update(thisUploadingUser.toJson());
   }
 
-
-
   //Read
-  void readUserImageObject(
-      StorageReference storagePath, var object) {
+  void readUserImageObject(StorageReference storagePath, var object) {
     //read the item from the database
   }
 
   //Update
-  void updateUserImageObject(BuildContext context, StorageReference storagePath,  DatabaseReference databasePath, ChurchUserModel userModel) {
+  void updateUserImageObject(BuildContext context, StorageReference storagePath,
+      DatabaseReference databasePath, DatabaseReference basicDatabasePath, ChurchUserModel userModel) {
     //update the item in the database
     var userImageInfoPath = storagePath.child("thisUserInfo");
     var userInfoPath = databasePath.child("thisUserInfo");
 
-    handleStorageTask(context, userInfoPath, userImageInfoPath, userModel);
-
+    handleStorageTask(context, userInfoPath, basicUserInfoRef, userImageInfoPath, userModel);
 
     //userInfoPath.update(thisUser.toJson());
   }
 
   //Delete
-  void deleteUserImageObject(
-      StorageReference storagePath, var object) {
+  void deleteUserImageObject(StorageReference storagePath, var object) {
     //delete the item from the database
   }
-
-
-
 
   //---------------------------
 

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_church_app_2020/Models/UserModel.dart';
 import 'package:flutter_church_app_2020/Pages/SignupPage/SignupBLOC.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 //firebase
 import 'package:firebase_database/firebase_database.dart';
@@ -17,6 +18,8 @@ import 'package:flutter_church_app_2020/Widget/ImageDialogueWidget.dart';
 import 'package:flutter_church_app_2020/Widget/MainButtonWidgets.dart';
 import 'package:flutter_church_app_2020/Widget/FloatingCardWidget.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:progress_dialog/progress_dialog.dart';
+import 'package:flutter_church_app_2020/Pages/SignupPage/TermsOfUse.dart';
 
 class RegistrationPage extends StatefulWidget {
   static String id = "registration_screen";
@@ -45,10 +48,8 @@ class _RegistrationPageState extends State<RegistrationPage>
   bool imageHasChanged = false;
 
   checkImage(File image, ChurchUserModel thisImageUser) {
-
     return signupBLOC.checkImage(image, thisImageUser);
   }
-
 
   //Futures
   takePicture() async {
@@ -65,9 +66,8 @@ class _RegistrationPageState extends State<RegistrationPage>
     });
   }
 
-
   getPictureFromGallery() async {
-   var image = await signupBLOC.getPictureFromGallery();
+    var image = await signupBLOC.getPictureFromGallery();
 
     Future.delayed(const Duration(milliseconds: 1000), () {
       setState(() {
@@ -86,13 +86,12 @@ class _RegistrationPageState extends State<RegistrationPage>
 
   //------------------
 
-
   //Working With Form
   final _formKey = GlobalKey<FormState>();
   //------------------
 
   //Commands
-  submitToFB() async{
+  submitToFB() async {
     final FormState form = _formKey.currentState;
 
     if (form.validate()) {
@@ -100,21 +99,37 @@ class _RegistrationPageState extends State<RegistrationPage>
       form.save();
       form.reset();
 
-      signupBLOC.submitToFB(context: context, thisUser: thisUser, imageHasChanged: imageHasChanged).then((isSignedIn) {
-        if (isSignedIn == true){
+      signupBLOC
+          .submitToFB(
+              context: context,
+              thisUser: thisUser,
+              imageHasChanged: imageHasChanged)
+          .then((isSignedIn) {
+        if (isSignedIn == true) {
           Navigator.pop(context, true);
           //widget.onSignedUp();
         }
       });
     }
+    ;
   }
 
-  signIn(){
+  signIn() {
     Navigator.pop(context);
   }
 
-
   //------------------
+
+  //Privacy Policy
+  launchPolicyURL() async {
+    const url = 'http://www.berryxchange.org/privacy-policy/';
+    if (await canLaunch(url)) {
+      await launch(url);
+    } else {
+      throw 'Could not launch $url';
+    }
+  }
+//----------------
 
   //initialization
   @override
@@ -161,13 +176,11 @@ class _RegistrationPageState extends State<RegistrationPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      /*appBar: AppBar(
+      appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: IconThemeData(color: Colors.grey),
       ),
-
-       */
       body: Stack(
         children: [
           Padding(
@@ -377,7 +390,7 @@ class _RegistrationPageState extends State<RegistrationPage>
                           //Navigator.of(context).pushNamed(MainContainerPage.id);
                         },
                       ),
-                      Row(
+                      /*Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
@@ -395,6 +408,46 @@ class _RegistrationPageState extends State<RegistrationPage>
                             },
                           )
                         ],
+                      ),
+                      */
+                      Padding(
+                        padding: const EdgeInsets.only(top: 10.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              "By signing up, you agree to the",
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                FlatButton(
+                                  child: Text(
+                                    "Terms of Use",
+                                    style: TextStyle(color: Colors.blue),
+                                  ),
+                                  onPressed: () {
+                                    Navigator.push(context, MaterialPageRoute(
+                                      builder: (context) {
+                                        return TermsOfUsePage();
+                                      },
+                                    ));
+                                  },
+                                ),
+                                FlatButton(
+                                  child: Text(
+                                    "Privacy Policy",
+                                    style: TextStyle(color: Colors.blue),
+                                  ),
+                                  onPressed: () {
+                                    launchPolicyURL();
+                                  },
+                                ),
+                              ],
+                            )
+                          ],
+                        ),
                       ),
                       Padding(
                         padding: EdgeInsets.symmetric(horizontal: 20.0),

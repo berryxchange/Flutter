@@ -178,7 +178,7 @@ class MinistriesBLOC{
     MinistryModel thisMinistry = MinistryModel(
         "Assets/BibleIcon.png",
         "Bible",
-        "Find, Read, Know Your Pages.Bible",
+        "Find, Read, Know Your Bible",
         "bible_page"
     );
 
@@ -299,7 +299,7 @@ class MinistriesBLOC{
     MinistryModel(
         "Assets/BibleIcon.png",
         "Pages.Bible",
-        "Find, Read, Know Your Pages.Bible",
+        "Find, Read, Know Your Bible",
         "bible_page"
     ),
     MinistryModel(

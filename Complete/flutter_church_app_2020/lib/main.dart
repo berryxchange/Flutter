@@ -26,6 +26,7 @@ import 'package:flutter/services.dart';
 //import 'package:flutter_church_app_2020/Pages/contact_list_page.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_church_app_2020/Pages/Payments/Stripe/PaymentPage/PaymentPage.dart';
+import 'package:flutter_church_app_2020/Pages/SignupPage/TermsOfUse.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -67,6 +68,11 @@ class Main extends StatelessWidget {
           // signup page
           RegistrationPage.id: (context) {
             return RegistrationPage(auth: AuthCentral());
+          },
+
+          //Terms page
+          TermsOfUsePage.id: (context) {
+            return TermsOfUsePage();
           },
 
           // onboarding page

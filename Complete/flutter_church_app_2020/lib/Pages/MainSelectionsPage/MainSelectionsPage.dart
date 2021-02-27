@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_church_app_2020/Models/SystemCheckModel.dart';
 import 'package:flutter_church_app_2020/Models/bible_model.dart';
@@ -19,8 +20,9 @@ import 'package:flutter_church_app_2020/Firebase/Authentication/auth.dart';
 import 'package:flutter_church_app_2020/Pages/Ministries/MinistriesBLOC.dart';
 import 'package:flutter_church_app_2020/Firebase/FCM/ChurchFirebaseMessagingBLOC.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-
-
+import 'package:flutter_church_app_2020/Pages/Media/Video/VideoMediaPage.dart';
+import 'package:progress_dialog/progress_dialog.dart';
+import 'package:ars_progress_dialog/ars_progress_dialog.dart';
 
 class MainSelectionsPage extends StatefulWidget {
   static String id = "main_page"; // page Id
@@ -52,9 +54,11 @@ class _MainSelectionsPageState extends State<MainSelectionsPage> {
   var systemCheckOnAddedRefListener;
   var systemCheckOnChangedRefListener;
   var systemCheckOnRemovedRefListener;
-  
-  
+
   //------------------
+  ArsProgressDialog progressDialog;
+
+//------------------
 
   //Auth
   FirebaseAuth _auth;
@@ -117,14 +121,11 @@ class _MainSelectionsPageState extends State<MainSelectionsPage> {
         });
   }
 
-
   _deleteUserData() {
     thisCurrentUser.delete();
   }
 
 //----------------
-
-
 
   //for walkthrough
   _checkUserAccountForWalkthrough(ChurchUserModel user) {
@@ -133,24 +134,24 @@ class _MainSelectionsPageState extends State<MainSelectionsPage> {
       _noAccountUser();
     } else {
       print("found an account!");
-      setState(() {
+      //setState(() {
         showSpinner = true;
         print("Spinning!");
-      });
+      //});
 
       if (thisUser.userUID != null) {
         print("im not null!");
         if (thisUser.isViewedIntroOnboarding == true) {
-          setState(() {
+          //setState(() {
             showSpinner = false;
             print("done!");
-          });
+          //});
         } else {
           _viewIntroOnboardingPage();
-          setState(() {
+          //setState(() {
             showSpinner = false;
             print("done!");
-          });
+          //});
         }
       }
     }
@@ -158,11 +159,8 @@ class _MainSelectionsPageState extends State<MainSelectionsPage> {
 
   //-----------
 
-
-
 //preparing to setup
   Future checkLogedInUser() async {
-
     mainSelectionsBLOC.checkLogedInUser().then((thisUser) {
       thisCurrentUser = thisUser;
 
@@ -175,115 +173,106 @@ class _MainSelectionsPageState extends State<MainSelectionsPage> {
     return thisCurrentUser;
   }
 
-  setPrayerRef(User thisCurrentUser){
+  setPrayerRef(User thisCurrentUser) {
     prayerRef = database
         .reference()
         .child("Users")
         .child("${thisCurrentUser.uid}")
         .child("prayers");
-
   }
 
-  setPrayerAgreementRef(User thisCurrentUser){
+  setPrayerAgreementRef(User thisCurrentUser) {
     prayerAgreementsRef = database
         .reference()
         .child("Users")
         .child("${thisCurrentUser.uid}")
         .child("prayerAgreements");
-
   }
 
   //------------------
 
-
-  setUserRef(User thisCurrentUser){
-
-    userRef = database
-        .reference()
-        .child('Users')
-        .child(thisCurrentUser.uid);
-
+  setUserRef(User thisCurrentUser) {
+    userRef = database.reference().child('Users').child(thisCurrentUser.uid);
 
     userOnAddedRefListener = userRef.onChildAdded.listen((event) {
       print("Data value: ${event.snapshot.key}");
-      if(event.snapshot.key == "thisUserInfo"){
+      if (event.snapshot.key == "thisUserInfo") {
         checkAndSetUserData(event: event);
       }
     });
 
-   userRef.onChildChanged.listen(null).onData((event) {
+    userRef.onChildChanged.listen(null).onData((event) {
       checkAndSetChangedUserData(event: event);
     });
   }
 
-
-  checkAndSetUserData({Event event}){
-
+  checkAndSetUserData({Event event}) {
     //the user data
-      thisUser = mainSelectionsBLOC.checkAndSetUserData(event: event);
+    thisUser = mainSelectionsBLOC.checkAndSetUserData(event: event);
 
-     //gets a token for this device and stores it for the user
-     // when the user logs in.
-     isAdmin = thisUser.isAdmin;
+    //gets a token for this device and stores it for the user
+    // when the user logs in.
+    isAdmin = thisUser.isAdmin;
 
-     if (thisUser.isAdmin != null || thisUser.isAdmin != false){
-       print("Setting up user admin data");
-       isAdmin = thisUser.isAdmin;
+    if (thisUser.isAdmin != null || thisUser.isAdmin != false) {
+      print("Setting up user admin data");
+      isAdmin = thisUser.isAdmin;
 
-       runSystemChecks();
+      runSystemChecks();
 
-       _saveDeviceToken(thisUser);
+      _saveDeviceToken(thisUser);
 
-       print("This user notifications: ${thisUser.mainNotification}");
-
-     }else{
-       _saveDeviceToken(thisUser);
-       print("no admin present");
-       FirebaseMessagingBLOC().configureFCM(context, thisUser);
-     }
-     print("Final User data is: ${thisUser.userName}");
-     setListeners();
+      print("This user notifications: ${thisUser.mainNotification}");
+    } else {
+      _saveDeviceToken(thisUser);
+      print("no admin present");
+      FirebaseMessagingBLOC().configureFCM(context, thisUser);
+    }
+    print("Final User data is: ${thisUser.userName}");
+    setListeners();
+    //progressDialog.dismiss(); //close dialog
   }
 
-  setListeners(){
+  setListeners() {
     //systemChecks
-    systemCheckOnAddedRefListener = systemCheckRef.onChildAdded.listen(_onSystemChecksAdded);
-    systemCheckOnChangedRefListener = systemCheckRef.onChildChanged.listen(_onSystemChecksChanged);
-    systemCheckOnRemovedRefListener = systemCheckRef.onChildRemoved.listen(_onSystemChecksRemoved);
+    systemCheckOnAddedRefListener =
+        systemCheckRef.onChildAdded.listen(_onSystemChecksAdded);
+    systemCheckOnChangedRefListener =
+        systemCheckRef.onChildChanged.listen(_onSystemChecksChanged);
+    systemCheckOnRemovedRefListener =
+        systemCheckRef.onChildRemoved.listen(_onSystemChecksRemoved);
     //Ministries
-    ministryOnAddedRefListener = ministryRef.onChildAdded.listen(_onMinistryEntryAdded);
-    ministryOnChangedRefListener = ministryRef.onChildChanged.listen(_onMinistryEntryChanged);
-    ministryOnRemovedRefListener = ministryRef.onChildRemoved.listen(_onMinistryChildRemoved);
+    ministryOnAddedRefListener =
+        ministryRef.onChildAdded.listen(_onMinistryEntryAdded);
+    ministryOnChangedRefListener =
+        ministryRef.onChildChanged.listen(_onMinistryEntryChanged);
+    ministryOnRemovedRefListener =
+        ministryRef.onChildRemoved.listen(_onMinistryChildRemoved);
   }
 
-
-
-
-  checkAndSetChangedUserData({Event event}){
-
+  checkAndSetChangedUserData({Event event}) {
     ChurchUserModel thisUser;
     var thisCurrentUser = ChurchUserModel.fromSnapshot(event.snapshot);
 
     if (thisCurrentUser.userName != null) {
-
       checkIfDataIsDifferent(thisCurrentUser);
       thisUser = thisCurrentUser;
-      print("Admin onboarding admin: ${thisCurrentUser.isViewedProfileOnboarding}");
+      print(
+          "Admin onboarding admin: ${thisCurrentUser.isViewedProfileOnboarding}");
     }
     return thisUser;
   }
 
-
-  checkIfDataIsDifferent(ChurchUserModel thisCurrentUser){
+  checkIfDataIsDifferent(ChurchUserModel thisCurrentUser) {
     if (isAdmin != thisCurrentUser.isAdmin) {
-      print("something important in data has changed, will sign out for security");
+      print(
+          "something important in data has changed, will sign out for security");
       //sign out
       requestUserReset();
     } else {
       print("data is no different");
     }
   }
-
 
   requestUserReset() {
     showDialog(
@@ -293,7 +282,7 @@ class _MainSelectionsPageState extends State<MainSelectionsPage> {
         });
   }
 
-  AlertDialog setAlertDialogue(){
+  AlertDialog setAlertDialogue() {
     return AlertDialog(
       title: Text(
         "Church App Dialog",
@@ -316,8 +305,6 @@ class _MainSelectionsPageState extends State<MainSelectionsPage> {
   }
   //----------------
 
-
-
   //Selecting a tab
   _checkUserAccountForList(ChurchUserModel user, index) {
     if (user == null) {
@@ -338,33 +325,42 @@ class _MainSelectionsPageState extends State<MainSelectionsPage> {
           print("is Tithes and offering");
           Navigator.push(context, MaterialPageRoute(
             builder: (context) {
-              return
-                TitheAndOffering(
-                  thisUser: thisUser,
-                );
+              return TitheAndOffering(
+                thisUser: thisUser,
+              );
             },
           ));
           break;
+
         case "Prayer":
           print("is Prayer");
           Navigator.push(context, MaterialPageRoute(
             builder: (context) {
-              return
-                PrayerPage(
-                  thisUser: thisUser,
-                );
+              return PrayerPage(
+                thisUser: thisUser,
+              );
             },
           ));
           break;
+
         case "Bible":
           print("is Bible");
           Navigator.push(context, MaterialPageRoute(
             builder: (context) {
-              return
-                BiblePage();
+              return BiblePage();
             },
           ));
+          break;
 
+        case "Media":
+          print("is Media Page");
+          Navigator.push(context, MaterialPageRoute(
+            builder: (context) {
+              return VideoMediaPage(
+                thisAdmin: thisUser,
+              );
+            },
+          ));
           break;
         default:
           Navigator.pushNamed(context, ministries[index].ministryDestination);
@@ -373,9 +369,9 @@ class _MainSelectionsPageState extends State<MainSelectionsPage> {
   }
   //----------------
 
-
   //When selecting profile button
-  _checkUserAccountForProfile(ChurchUserModel user, VoidCallback onSignOut) async {
+  _checkUserAccountForProfile(
+      ChurchUserModel user, VoidCallback onSignOut) async {
     if (user == null) {
       print("no account found!");
       _noAccountUser();
@@ -388,21 +384,18 @@ class _MainSelectionsPageState extends State<MainSelectionsPage> {
           context,
           MaterialPageRoute(
             builder: (context) {
-              return ProfilePage(
-                  thisUser: thisUser
-              );
+              return ProfilePage(thisUser: thisUser);
             },
           ),
         );
 
-        if (unwind == true){
+        if (unwind == true) {
           widget.onSignOut();
         }
       }
     }
   }
 //-----------------
-
 
   //--------------- For FCM ---------------------
 
@@ -411,21 +404,26 @@ class _MainSelectionsPageState extends State<MainSelectionsPage> {
     FirebaseMessagingBLOC().setupNotifications();
   }
 
-
   //to configure the FCM
-  configureFCM() {
+  configureFCM(BuildContext context) async {
+    
     checkLogedInUser();
   }
 
   //------------------------------
-
-
 
   //Initializer
   @override
   void initState() {
     //print(myPrayerAgreements.length);
     super.initState();
+    //Dialog
+
+ProgressDialog dialog = ProgressDialog(context);
+    //dialog.style(message: "Please wait..");
+    dialog.hide();
+
+    
 
     //Admin
     //get all system checks
@@ -433,26 +431,24 @@ class _MainSelectionsPageState extends State<MainSelectionsPage> {
     //ministriesBLOC.setAllMinistries(context);
     //ministriesBLOC.setAllMinistryChecks(context);
 
-
     ministriesBLOC = MinistriesBLOC();
     mainSelectionsBLOC = MainSelectionsBLOC();
     _auth = AuthCentral.auth;
     firebaseMessagingBLOC = FirebaseMessagingBLOC();
 
-
     //Listeners
     //systemCheck
-    systemCheckRef = FirebaseDatabase.instance.reference()
+    systemCheckRef = FirebaseDatabase.instance
+        .reference()
         .child('SystemChecks')
         .child("AllMinistriesToCheck");
 
-    ministryRef = FirebaseDatabase.instance.reference()
+    ministryRef = FirebaseDatabase.instance
+        .reference()
         .child('SystemChecks')
         .child("AllMinistriesToLoad");
-    
-    bibleRef = FirebaseDatabase.instance.reference()
-        .child("Bibles");
 
+    bibleRef = FirebaseDatabase.instance.reference().child("Bibles");
 
     //presetups
     //set specific ministries(ministriesBLOC.setAllMinistries or ministriesBLOC.setAdminMinistry )
@@ -477,20 +473,15 @@ class _MainSelectionsPageState extends State<MainSelectionsPage> {
     //FCM
     setupNotifications();
 
-    configureFCM();
-
+    configureFCM(context);
   }
   //------------------
 
   //functions
 
-  runSystemChecks(){
+  runSystemChecks() {
     mainSelectionsBLOC.runSystemChecks(context, systemChecks);
   }
-
-
-
-
 
   //functions
 
@@ -545,15 +536,12 @@ class _MainSelectionsPageState extends State<MainSelectionsPage> {
     }
   }
 
-
   // gets a device token
   _saveDeviceToken(ChurchUserModel userModel) async {
     setState(() {
       firebaseMessagingBLOC.saveDeviceToken(userModel);
     });
   }
-
-
 
   _viewIntroOnboardingPage() {
     //Navigator.pushNamed(context, OnboardingPage.id);
@@ -597,18 +585,16 @@ class _MainSelectionsPageState extends State<MainSelectionsPage> {
     }
   }
 
-
   _onMinistryEntryChanged(Event event) {
     var old = ministries.singleWhere((entry) {
       return entry.key == event.snapshot.key;
     });
 
     setState(() {
-      ministries[ministries.indexOf(old)] = MinistryModel.fromSnapshot(event.snapshot);
+      ministries[ministries.indexOf(old)] =
+          MinistryModel.fromSnapshot(event.snapshot);
     });
-
   }
-
 
   _onMinistryChildRemoved(Event event) {
     var old = ministries.singleWhere((entry) {
@@ -618,9 +604,7 @@ class _MainSelectionsPageState extends State<MainSelectionsPage> {
     setState(() {
       ministries.removeAt(ministries.indexOf(old));
     });
-
   }
-
 
   //Ministries
 
@@ -631,18 +615,17 @@ class _MainSelectionsPageState extends State<MainSelectionsPage> {
     });
   }
 
-
   _onSystemChecksChanged(Event event) {
     var old = systemChecks.singleWhere((entry) {
       return entry.key == event.snapshot.key;
     });
 
     setState(() {
-      systemChecks[systemChecks.indexOf(old)] = SystemCheckModel.fromSnapshot(event.snapshot);
+      systemChecks[systemChecks.indexOf(old)] =
+          SystemCheckModel.fromSnapshot(event.snapshot);
     });
     runSystemChecks();
   }
-
 
   _onSystemChecksRemoved(Event event) {
     var old = systemChecks.singleWhere((entry) {
@@ -657,8 +640,6 @@ class _MainSelectionsPageState extends State<MainSelectionsPage> {
 
   //------------------
 
-
-  
   @override
   void dispose() {
     // TODO: implement dispose
@@ -671,8 +652,6 @@ class _MainSelectionsPageState extends State<MainSelectionsPage> {
     systemCheckOnRemovedRefListener?.cancel();
     super.dispose();
   }
-   
-
 
   @override
   Widget build(BuildContext context) {
@@ -789,9 +768,7 @@ class _MainSelectionsPageState extends State<MainSelectionsPage> {
                 containerHeight: 400,
                 pagination: SwiperPagination(),
                 loop: false,
-              )
-          )
-      ),
+              ))),
     );
   }
 }
