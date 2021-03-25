@@ -1,16 +1,19 @@
 # flutter_church_app_2020
 
-A new Flutter application.
+A new Flutter Church application.
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
+This project is a modified application from a previously developed app in swift.
 
-A few resources to get you started if this is your first Flutter project:
+This app will be built in stages based on which feature is needed most.
 
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
+So far, the application has been built with three main features
+ - Bible
+ - Prayer
+ - Tithe and offering
 
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+This app does also provide the user with an editable profile and authentication for loging in and out of the application.
+
+
+
